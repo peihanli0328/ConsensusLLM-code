@@ -29,6 +29,7 @@ from .gpt import GPT
 from ..prompt.summarize import summarizer_role
 from ..prompt.form import summarizer_output_form
 
+
 class Agent2D(GPT):
     """
     A class representing a 2D agent with position control.
@@ -39,17 +40,25 @@ class Agent2D(GPT):
         key (str): API key for the GPT model.
         name (str): Name of the agent (optional).
         model (str): GPT model name (default is 'gpt-3.5-turbo-0613').
-        temperature (float): 
+        temperature (float):
             GPT temperature for text generation (default is 0.7).
-        keep_memory (bool): 
+        keep_memory (bool):
             Whether to keep a memory of conversations (default is False).
     """
-    
-    def __init__(self, position, other_position, key: str, name=None,
-                 model: str = 'gpt-3.5-turbo-0613', temperature: float = 0.7, 
-                 keep_memory=False):
-        super().__init__(key=key, model=model, temperature=temperature, 
-                         keep_memory=keep_memory)
+
+    def __init__(
+        self,
+        position,
+        other_position,
+        key: str,
+        name=None,
+        model: str = "gpt-3.5-turbo-0613",
+        temperature: float = 0.7,
+        keep_memory=False,
+    ):
+        super().__init__(
+            key=key, model=model, temperature=temperature, keep_memory=keep_memory
+        )
         self._name = name
         self._velocity = np.zeros(2)  # Current velocity of the agent
         self._max_traction_force = 50  # Maximum traction force of the agent (N)
@@ -67,11 +76,10 @@ class Agent2D(GPT):
         self._other_position = other_position  # Positions of other agents
         self._trajectory = []  # Record the agent's movement trajectory
         self._target_trajectory = []  # Record the agent's target trajectory
-        self._summarizer = GPT(key=key, model="gpt-3.5-turbo-0613", 
-                               keep_memory=False)
+        self._summarizer = GPT(key=key, model="gpt-3.5-turbo-0613", keep_memory=False)
         self._summarize_result = ""
         self._summarizer_descriptions = summarizer_output_form
-        self._summarizer.memories_update(role='system', content=summarizer_role)
+        self._summarizer.memories_update(role="system", content=summarizer_role)
 
     @property
     def name(self):
@@ -131,14 +139,22 @@ class Agent2D(GPT):
         except Exception as e:
             try_times += 1
             if try_times < 3:
-                print(f"An error occurred when agent {self._name} tried to "
-                      f"generate answers: {e},try_times: {try_times + 1}/3.")
-                return self.answer(input=input, idx=idx, round=round, 
-                                   simulation_ind=simulation_ind, 
-                                   try_times=try_times)
+                print(
+                    f"An error occurred when agent {self._name} tried to "
+                    f"generate answers: {e},try_times: {try_times + 1}/3."
+                )
+                return self.answer(
+                    input=input,
+                    idx=idx,
+                    round=round,
+                    simulation_ind=simulation_ind,
+                    try_times=try_times,
+                )
             else:
-                print("After three attempts, the error still remains "
-                      f"unresolved, the input is:\n'{input}'\n.")
+                print(
+                    "After three attempts, the error still remains "
+                    f"unresolved, the input is:\n'{input}'\n."
+                )
                 return idx, self._target_position
 
     def summarize(self, agent_answers):
@@ -152,7 +168,8 @@ class Agent2D(GPT):
             self._summarize_result = ""
         else:
             self._summarize_result = self._summarizer.generate_answer(
-                self._summarizer_descriptions.format(agent_answers))
+                self._summarizer_descriptions.format(agent_answers)
+            )
 
     def parse_output(self, output):
         """
@@ -164,17 +181,19 @@ class Agent2D(GPT):
         Returns:
             tuple: Parsed position value (x, y).
         """
-        matches = re.findall(r'\((.*?)\)', output)
+        matches = re.findall(r"\((.*?)\)", output)
         if matches:
             last_match = matches[-1]
-            numbers = re.findall(r'[-+]?\d*\.\d+|\d+', last_match)
+            numbers = re.findall(r"[-+]?\d*\.\d+|\d+", last_match)
             if len(numbers) == 2:
                 x = float(numbers[0])
                 y = float(numbers[1])
                 return (x, y)
             else:
-                raise ValueError(f"The last match {last_match} does "
-                                 "not contain exactly 2 numbers.")
+                raise ValueError(
+                    f"The last match {last_match} does "
+                    "not contain exactly 2 numbers."
+                )
         else:
             raise ValueError(f"No array found in the output: \n{output}")
 
@@ -205,7 +224,9 @@ class Agent2D(GPT):
         velocity_magnitude = np.linalg.norm(self._velocity)
         if velocity_magnitude > self._max_velocity:
             self._velocity = (self._velocity / velocity_magnitude) * self._max_velocity
-        self._position += self._velocity * time_duration + 0.5 * acceleration * time_duration ** 2
+        self._position += (
+            self._velocity * time_duration + 0.5 * acceleration * time_duration**2
+        )
         self._position = tuple(np.round(self._position, 2))
         self.prev_error = error
         self._trajectory.append(self._position)
